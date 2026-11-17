@@ -1,0 +1,69 @@
+=== A timeout and a retry, a pause for approval, then the send ===
+
+$ python3 charter.py run REQ-1042 --fail-availability 1
+[START]      Workflow REQ-1042
+[RUNNING]    Check availability
+[FAILED]     Temporary API timeout
+[RETRY]      Attempt 2
+[SUCCESS]    Aircraft availability received
+[RUNNING]    Prepare quote
+[SUCCESS]    Draft prepared
+[PAUSED]     Waiting for human approval
+
+Draft for Morgan Lee: Citation XLS+ (N512AV), KTEB to KPBI on 2026-12-18, total $14,990
+Approve: python3 charter.py approve REQ-1042 --by <name>
+Reject:  python3 charter.py reject REQ-1042 --by <name> --reason <text>
+
+$ python3 charter.py run REQ-1042
+error: REQ-1042 is waiting for approval; approve or reject it
+
+$ python3 charter.py approve REQ-1042 --by dana
+[APPROVED]   Human approves draft (by dana)
+[RUNNING]    Send quote (mock)
+[SUCCESS]    Mock send completed
+[COMPLETE]   Workflow finished
+
+$ python3 charter.py status REQ-1042
+Workflow REQ-1042: COMPLETE
+2026-11-17T07:20:46+00:00  [START]      Workflow REQ-1042
+2026-11-17T07:20:46+00:00  [RUNNING]    Check availability
+2026-11-17T07:20:46+00:00  [FAILED]     Temporary API timeout
+2026-11-17T07:20:47+00:00  [RETRY]      Attempt 2
+2026-11-17T07:20:47+00:00  [SUCCESS]    Aircraft availability received
+2026-11-17T07:20:47+00:00  [RUNNING]    Prepare quote
+2026-11-17T07:20:47+00:00  [SUCCESS]    Draft prepared
+2026-11-17T07:20:47+00:00  [PAUSED]     Waiting for human approval
+2026-11-17T07:20:47+00:00  [APPROVED]   Human approves draft (by dana)
+2026-11-17T07:20:47+00:00  [RUNNING]    Send quote (mock)
+2026-11-17T07:20:47+00:00  [SUCCESS]    Mock send completed
+2026-11-17T07:20:47+00:00  [COMPLETE]   Workflow finished
+
+=== Retries run out, a rerun continues, then the draft is rejected ===
+
+$ python3 charter.py run REQ-1043 --fail-availability 3
+[START]      Workflow REQ-1043
+[RUNNING]    Check availability
+[FAILED]     Temporary API timeout
+[RETRY]      Attempt 2
+[FAILED]     Temporary API timeout
+[RETRY]      Attempt 3
+[FAILED]     Temporary API timeout
+[STOPPED]    Workflow stopped at Check availability
+
+Rerun to continue from the failed step: python3 charter.py run REQ-1043
+
+$ python3 charter.py run REQ-1043
+[RESUMED]    Continuing from Check availability
+[RUNNING]    Check availability
+[SUCCESS]    Aircraft availability received
+[RUNNING]    Prepare quote
+[SUCCESS]    Draft prepared
+[PAUSED]     Waiting for human approval
+
+Draft for Morgan Lee: Citation XLS+ (N512AV), KTEB to KPBI on 2026-12-18, total $14,990
+Approve: python3 charter.py approve REQ-1043 --by <name>
+Reject:  python3 charter.py reject REQ-1043 --by <name> --reason <text>
+
+$ python3 charter.py reject REQ-1043 --by dana --reason "Client wants a larger cabin"
+[REJECTED]   Human rejects draft (by dana): Client wants a larger cabin
+
